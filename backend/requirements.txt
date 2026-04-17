@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+asyncpg
+aiosqlite
+psycopg2-binary
+pydantic
+pydantic-settings
+alembic
+PyJWT
+sentry-sdk[fastapi]
+prometheus-client
+pytest
+pytest-asyncio
+httpx

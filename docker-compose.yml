@@ -1,0 +1,106 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: b2b_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: b2b_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data_app:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d b2b_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: b2b_backend
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:password@db:5432/b2b_db
+      - CORS_ORIGINS=http://localhost,http://127.0.0.1
+      - SECRET_KEY=supersecretkey_for_hackathon_mvp
+      - COOKIE_SECURE=false
+      - COOKIE_SAMESITE=lax
+      - FIRST_SUPERUSER_LOGIN=admin
+      - FIRST_SUPERUSER_PASSWORD=admin123
+      - SEED_DEMO_MANAGER_LOGIN=manager
+      - SEED_DEMO_MANAGER_PASSWORD=manager123
+    depends_on:
+      db:
+        condition: service_healthy
+    command: sh -c "alembic upgrade head && python -m app.seed && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    container_name: b2b_frontend
+    depends_on:
+      - backend
+
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    container_name: b2b_nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+      - frontend
+
+  backend-dev:
+    profiles: ["dev"]
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: b2b_backend_dev
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:password@db:5432/b2b_db
+      - CORS_ORIGINS=http://localhost:5173,http://localhost
+      - SECRET_KEY=supersecretkey_for_hackathon_mvp
+      - COOKIE_SECURE=false
+      - COOKIE_SAMESITE=lax
+      - FIRST_SUPERUSER_LOGIN=admin
+      - FIRST_SUPERUSER_PASSWORD=admin123
+      - SEED_DEMO_MANAGER_LOGIN=manager
+      - SEED_DEMO_MANAGER_PASSWORD=manager123
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+    command: sh -c "pip install -r requirements.txt && alembic upgrade head && python -m app.seed && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+
+  frontend-dev:
+    profiles: ["dev"]
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: b2b_frontend_dev
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000/api/v1
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend-dev
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+
+volumes:
+  postgres_data_app:
