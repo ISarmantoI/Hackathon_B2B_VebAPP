@@ -44,6 +44,14 @@ npm run dev
 
 > `npm install` обязателен после клонирования — папка `node_modules` не хранится в репозитории.
 
+## Стек
+
+| Слой | Технологии |
+|------|-----------|
+| Backend | Python, FastAPI, SQLAlchemy, PostgreSQL, Alembic |
+| Frontend | Vue 3, Pinia, Vue Router, shadcn-vue, Tailwind CSS |
+| Инфраструктура | Docker, nginx, Prometheus |
+
 ## Quality Pipeline
 
 - Backend unit + integration tests:
