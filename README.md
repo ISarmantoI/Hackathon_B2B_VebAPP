@@ -21,7 +21,7 @@ docker compose up -d --build
 docker compose --profile dev up -d --build
 ```
 
-- Фронтенд: http://localhost:5173
+- Фронтенд (Vue): http://localhost:5173
 - Бэкенд API: http://localhost:8000
 - Swagger: http://localhost:8000/api/docs
 
@@ -35,24 +35,44 @@ alembic upgrade head
 uvicorn app.main:app --reload
 ```
 
-**Frontend:**
+**Frontend Vue:**
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
+**Frontend React:**
+```bash
+cd frontend-react
+npm install
+npm run dev
+```
+
 > `npm install` обязателен после клонирования — папка `node_modules` не хранится в репозитории.
+
+## Фронтенды
+
+Проект содержит два фронтенда с одинаковым функционалом, оба работают с одним бэкендом:
+
+| | Vue | React |
+|---|---|---|
+| Папка | `frontend/` | `frontend-react/` |
+| Стек | Vue 3 + Pinia + Vue Router + shadcn-vue | React 18 + Zustand + React Router + TanStack Query |
+| Dev-порт | 5173 | 5173 |
+| Сборка | `npm run build` | `npm run build` |
 
 ## Quality Pipeline
 
 - Backend unit + integration tests:
   - `cd backend && python -m pytest -q`
   - `cd backend && python -m unittest discover -s tests -v`
-- Frontend build + typecheck:
+- Frontend Vue build + typecheck:
   - `cd frontend && npm run typecheck`
   - `cd frontend && npm run build`
-- Frontend e2e smoke:
+- Frontend React build:
+  - `cd frontend-react && npm run build`
+- Frontend e2e smoke (Vue):
   - `cd frontend && npx playwright install chromium`
   - `cd frontend && npm run test:e2e`
 - Docker smoke:
